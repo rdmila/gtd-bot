@@ -13,7 +13,6 @@ INSTRUCTIONS = {
 con = sqlite3.connect('notes.db')
 cur = con.cursor()
 tables = cur.execute("SELECT name FROM sqlite_master").fetchall()
-print(tables)
 
 if ('notes', ) not in tables:
     cur.execute("CREATE TABLE notes(user_id, list, note, add_time, done)")
@@ -88,7 +87,6 @@ def delete(user_id, list_name=None, pos=None, values=None, timestamp=None):
     if timestamp is None:
         if values is None:
             values = get_list(user_id, list_name)
-        print(values)
         item = values[pos - 1]
         timestamp = item[1]
     cur.execute("""DELETE 
@@ -122,10 +120,8 @@ def receive_get_list(message):
     user_id = message.from_user.id
     command = message.text.split()[0][1:]
     res = get_list(user_id, command)
-    print(res)
     values = [str(id + 1) + ". " + note[0] + ("✔" if note[2] else "")
               for id, note in enumerate(res)]
-    print(values)
     bot.send_message(user_id, "IN:\n" + '\n'.join(values))
 
 
@@ -196,7 +192,6 @@ def echo_all(message):
     menu = get_menu(user_id)
     if menu is None:
         menu = register(user)
-    print(menu)
 
     if menu == "default":
         insert(user_id, "in", message.text, message.date)
