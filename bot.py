@@ -143,11 +143,12 @@ def on_start(message):
     user_dir = os.path.join(TMP, "dir" + str(user.id))
     if not os.path.exists(user_dir):
         os.mkdir(user_dir)
-    
+
     archive_path = create_archive(user.id, user_dir)
     with open(archive_path, 'rb') as archive:
         bot.send_document(user.id, archive)
     os.remove(archive_path)
+
 
 @bot.message_handler(commands=LIST_NAMES)
 def receive_get_list(message):
