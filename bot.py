@@ -1,5 +1,8 @@
 import telebot
 import sqlite3
+import os
+import shutil
+
 
 DELETE_CONFIRMATION_TEXT = 'Yes, I am totally sure.'
 LIST_NAMES = ['in', 'next', 'waiting', 'projects', 'someday']
@@ -9,6 +12,14 @@ INSTRUCTIONS = {
     "del": """/done N LIST - удаляет задачу N из списка LIST""",
     "done": """/done N LIST - помечает задачу N из списка LIST выполненной"""
 }
+
+with open("token.txt", "r") as token_file:
+    TOKEN = token_file.read()
+
+TMP = os.path.join(os.getcwd(), 'tmp')
+
+if not os.path.exists(TMP):
+    os.mkdir('tmp')
 
 con = sqlite3.connect('notes.db')
 cur = con.cursor()
@@ -20,11 +31,7 @@ if ('menus', ) not in tables:
     cur.execute("CREATE TABLE menus(user_id, username, menu)")
 con.commit()
 
-
-with open("token.txt", "r") as token_file:
-    token = token_file.read()
-
-bot = telebot.TeleBot(token, threaded=False)
+bot = telebot.TeleBot(TOKEN, threaded=False)
 
 
 def register(user):
@@ -107,6 +114,21 @@ def change_done(user_id, is_done, list_name=None, pos=None, values=None, timesta
     con.commit()
 
 
+def create_archive(user_id, user_dir):
+    files_dir = os.path.join(user_dir, "files")
+    os.mkdir(files_dir)
+    lst = get_list(user_id, "in")
+    for num, note in enumerate(lst):
+        file_name = os.path.join(files_dir, "file" + str(num) + ".txt")
+        with open(file_name, 'w') as file:
+            file.write(note[0])
+
+    archive_name = os.path.join(user_dir, "export")
+    shutil.make_archive(archive_name, 'zip', files_dir)
+    shutil.rmtree(files_dir)
+    return os.path.join(user_dir, "export.zip")
+
+
 @bot.message_handler(commands=['start'])
 def on_start(message):
     user = message.from_user
@@ -114,6 +136,18 @@ def on_start(message):
         register(user)
     bot.reply_to(message, "Hello! I am GTD tracker!")  # TODO: Change message
 
+
+@bot.message_handler(commands=['export'])
+def on_start(message):
+    user = message.from_user
+    user_dir = os.path.join(TMP, "dir" + str(user.id))
+    if not os.path.exists(user_dir):
+        os.mkdir(user_dir)
+    
+    archive_path = create_archive(user.id, user_dir)
+    with open(archive_path, 'rb') as archive:
+        bot.send_document(user.id, archive)
+    os.remove(archive_path)
 
 @bot.message_handler(commands=LIST_NAMES)
 def receive_get_list(message):
