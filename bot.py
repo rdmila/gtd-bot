@@ -5,7 +5,7 @@ import shutil
 
 
 DELETE_CONFIRMATION_TEXT = 'Yes, I am totally sure.'
-LIST_NAMES = ['in', 'next', 'waiting', 'projects', 'someday']
+LIST_NAMES = ['in', 'next', 'wait', 'projects', 'someday']
 PARSE_ERROR_MSG = """Неверное использование команды!
 """
 INSTRUCTIONS = {
@@ -157,7 +157,7 @@ def receive_get_list(message):
     res = get_list(user_id, command)
     values = [str(id + 1) + ". " + note[0] + ("✔" if note[2] else "")
               for id, note in enumerate(res)]
-    bot.send_message(user_id, "IN:\n" + '\n'.join(values))
+    bot.send_message(user_id, command + ":\n\n" + '\n'.join(values))
 
 
 @bot.message_handler(commands=['resetall'])
@@ -195,7 +195,25 @@ def receive_delete(message):
     pos = int(words[1])
     list_name = words[2]
     delete(user_id, list_name=list_name, pos=pos)
-    bot.send_message(user_id, "Deleted")
+    bot.send_message(user_id, "Задача удалена")
+
+
+@bot.message_handler(commands=['move'])
+def receive_delete(message):
+    user_id = message.from_user.id
+    words = message.text.split()
+    if len(words) < 4 or not words[1].isnumeric() or not words[2] in LIST_NAMES or not words[3] in LIST_NAMES:
+        cmd = words[0][1:]
+        bot.send_message(user_id, PARSE_ERROR_MSG + INSTRUCTIONS[cmd])
+        return
+    pos = int(words[1])
+    list_a = words[2]
+    list_b = words[3]
+    lst = get_list(user_id, list_a)
+    note = lst[pos - 1][0]
+    delete(user_id, list_name=list_a, pos=pos)
+    insert(user_id, list_b, note, message.date)
+    bot.send_message(user_id, "Задача перемещена в список " + list_b)
 
 
 def share(receiver_id, sender_login, note):
@@ -217,7 +235,11 @@ def receive_share(message):
         bot.send_message(
             user_id, "Не удалось поделиться задачей: @" + receiver + "не использует бота")
     else:
-        share(receiver_id, message.from_user.username, "note")
+        list_name = words[2]
+        pos = int(words[1])
+        lst = get_list(user_id, list_name)
+        note = lst[pos - 1][0]
+        share(receiver_id, message.from_user.username, note)
 
 
 @bot.message_handler(func=lambda m: True)
@@ -235,6 +257,7 @@ def echo_all(message):
     elif menu == "confirm_resetall":
         if message.text == DELETE_CONFIRMATION_TEXT:
             resetall(user_id)
+            bot.send_message(user_id, "Все задачи удалены")
         else:
             bot.send_message(user_id, "Удаление отменено")
         set_menu(user_id, "default")
