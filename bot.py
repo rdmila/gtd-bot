@@ -3,6 +3,7 @@ import os
 from database import DataBase
 from archiver import create_archive
 from message_consts import *
+from plot import create_done_plot
 
 LIST_NAMES = ['in', 'next', 'wait', 'projects', 'someday']
 
@@ -66,7 +67,7 @@ def receive_done(message):
         return
     pos = int(words[1])
     list_name = words[2]
-    base.se(user_id, 1, list_name=list_name, pos=pos)
+    base.set_done_time(user_id, message.date, list_name=list_name, pos=pos)
     bot.send_message(user_id, TASK_DONE)
 
 
@@ -126,6 +127,22 @@ def receive_share(message):
         lst = base.get_list(user_id, list_name)
         note = lst[pos - 1][0]
         share(receiver_id, message.from_user.username, note)
+
+
+@bot.message_handler(commands=['stats'])
+def on_get_stats(message):
+    user = message.from_user
+
+    user_dir = os.path.join(TMP, "dir" + str(user.id))
+    if not os.path.exists(user_dir):
+        os.mkdir(user_dir)
+
+    notes = base.get_all_notes(user.id)
+
+    plot_path = create_done_plot(notes, user_dir)
+    with open(plot_path, 'rb') as plot_picture:
+        bot.send_document(user.id, plot_picture)
+    os.remove(plot_path)
 
 
 @bot.message_handler(func=lambda m: True)

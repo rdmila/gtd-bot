@@ -9,7 +9,7 @@ class DataBase:
             "SELECT name FROM sqlite_master").fetchall()
         if ('notes', ) not in tables:
             cur.execute(
-                "CREATE TABLE notes(user_id, list, note, add_time, done)")
+                "CREATE TABLE notes(user_id, list, note, add_time, done_time)")
         if ('menus', ) not in tables:
             cur.execute("CREATE TABLE menus(user_id, username, menu)")
         con.commit()
@@ -51,11 +51,19 @@ class DataBase:
         self.con.commit()
 
     def get_list(self, user_id, list_name):
-        exec = self.cur.execute("""SELECT note, add_time, done
+        exec = self.cur.execute("""SELECT note, add_time, done_time
                             FROM notes
                             WHERE user_id = ? AND list = ? 
                             ORDER BY add_time""",
                                 (user_id, list_name))
+        return exec.fetchall()
+
+    def get_all_notes(self, user_id):
+        exec = self.cur.execute("""SELECT note, add_time, done_time
+                            FROM notes
+                            WHERE user_id = ?
+                            ORDER BY add_time""",
+                                (user_id, ))
         return exec.fetchall()
 
     def insert_note(self, user_id, list_name, note, timestamp):
@@ -75,12 +83,12 @@ class DataBase:
                          (user_id, timestamp))
         self.con.commit()
 
-    def set_doneflag(self, user_id, is_done, list_name=None, pos=None, values=None, timestamp=None):
+    def set_done_time(self, user_id, done_time, list_name=None, pos=None, values=None, timestamp=None):
         if timestamp is None:
             if values is None:
                 values = self.get_list(user_id, list_name)
             timestamp = values[pos - 1][1]
         self.cur.execute("""UPDATE notes
-                    SET done = ?
-                    WHERE user_id = ? AND add_time = ?""", (is_done, user_id, timestamp))
+                    SET done_time = ?
+                    WHERE user_id = ? AND add_time = ?""", (done_time, user_id, timestamp))
         self.con.commit()
