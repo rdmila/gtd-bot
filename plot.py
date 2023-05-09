@@ -5,18 +5,23 @@ import datetime
 from collections import Counter
 import os
 
+
 def is_today(date_time):
     border = dt.now() - datetime.timedelta(hours=24)
     return date_time >= border
+
 
 def minute_precition(date_time):
     t = date_time
     return dt(t.year, t.month, t.day, t.hour, t.minute)
 
+
 def create_done_plot(notes, user_dir):
     times = [dt.fromtimestamp(note[2]) for note in notes if note[2] != 0]
-    times = [t for t in times if is_today(t)] # remove entries older than one day
-    times = sorted([minute_precition(t) for t in times]) # remove seconds info in entries
+    # remove entries older than one day
+    times = [t for t in times if is_today(t)]
+    # remove seconds info in entries
+    times = sorted([minute_precition(t) for t in times])
 
     cnt = Counter(times)
     x = list(cnt)
