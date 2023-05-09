@@ -27,6 +27,11 @@ def on_start(message):
     bot.reply_to(message, START_MSG)
 
 
+@bot.message_handler(commands=['help'])
+def on_start(message):
+    bot.reply_to(message, HELP_MSG)
+
+
 @bot.message_handler(commands=['export'])
 def on_export(message):
     user = message.from_user

@@ -15,8 +15,10 @@ INSTRUCTIONS = {
     "done": """/done N LIST - помечает задачу N из списка LIST выполненной"""
 }
 
-START_MSG = """Hi! Type / to see command list. 
+HELP_MSG = """Type / to see command list. 
 Any message without a command would be interpreted as note and added to "in" list."""
+
+START_MSG = "Hi!\n" + HELP_MSG
 
 TASK_ADDED = 'Задача добавлена в список {}!'
 
